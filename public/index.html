@@ -10,123 +10,160 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Header -->
-  <header id="header">
-    <div class="header-left">
-      <div class="logo">
-        <span class="logo-icon">&#9001;/&#9002;</span>
-        <h1 id="project-name">Claw Monitor</h1>
-      </div>
-      <p id="project-desc" class="header-desc">Loading...</p>
+  <!-- Nav Tabs -->
+  <nav id="main-nav">
+    <div class="nav-brand">
+      <span class="logo-icon">&#9001;/&#9002;</span>
+      <span class="nav-title">Claw Monitor</span>
     </div>
-    <div class="header-center">
-      <div class="progress-wrapper">
-        <div class="progress-label">
-          <span>Overall Progress</span>
-          <span id="progress-text">0 / 0 tasks</span>
-        </div>
-        <div class="progress-bar-track">
-          <div class="progress-bar-fill" id="progress-fill"></div>
-        </div>
-      </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="monitor">🖥 Monitor</button>
+      <button class="nav-tab" data-view="history">📜 History</button>
     </div>
-    <div class="header-right">
-      <div class="header-stat">
-        <span class="stat-label">Uptime</span>
-        <span class="stat-value mono" id="uptime">00:00:00</span>
-      </div>
+    <div class="nav-right">
       <div class="connection-status" id="connection-status">
         <span class="connection-dot"></span>
         <span class="connection-text">Connecting</span>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main>
-    <!-- Agent Cards -->
-    <section id="agents-section">
-      <h2 class="section-title">Active Agents</h2>
-      <div id="agents-grid" class="agents-grid"></div>
-    </section>
-
-    <!-- Task Board -->
-    <section id="tasks-section">
-      <h2 class="section-title">Task Board</h2>
-      <div class="kanban-board">
-        <div class="kanban-column" data-status="todo">
-          <div class="kanban-header">
-            <span class="kanban-title">To Do</span>
-            <span class="kanban-count" id="count-todo">0</span>
+  <!-- VIEW: Monitor (original dashboard) -->
+  <div id="view-monitor" class="view active">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <h1 id="project-name">Claw Monitor</h1>
+        <p id="project-desc" class="header-desc">Loading...</p>
+      </div>
+      <div class="header-center">
+        <div class="progress-wrapper">
+          <div class="progress-label">
+            <span>Overall Progress</span>
+            <span id="progress-text">0 / 0 tasks</span>
           </div>
-          <div class="kanban-cards" id="col-todo"></div>
-        </div>
-        <div class="kanban-column" data-status="in-progress">
-          <div class="kanban-header">
-            <span class="kanban-title">In Progress</span>
-            <span class="kanban-count" id="count-in-progress">0</span>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill"></div>
           </div>
-          <div class="kanban-cards" id="col-in-progress"></div>
-        </div>
-        <div class="kanban-column" data-status="done">
-          <div class="kanban-header">
-            <span class="kanban-title">Done</span>
-            <span class="kanban-count" id="count-done">0</span>
-          </div>
-          <div class="kanban-cards" id="col-done"></div>
-        </div>
-        <div class="kanban-column" data-status="blocked">
-          <div class="kanban-header">
-            <span class="kanban-title">Blocked</span>
-            <span class="kanban-count" id="count-blocked">0</span>
-          </div>
-          <div class="kanban-cards" id="col-blocked"></div>
         </div>
       </div>
-    </section>
-
-    <!-- Bottom row: Logs + Stats -->
-    <div class="bottom-row">
-      <!-- Live Activity Feed -->
-      <section id="logs-section">
-        <div class="logs-header">
-          <h2 class="section-title">Live Activity Feed</h2>
-          <span class="log-badge" id="log-pause-badge" style="display:none">PAUSED</span>
+      <div class="header-right">
+        <div class="header-stat">
+          <span class="stat-label">Uptime</span>
+          <span class="stat-value mono" id="uptime">00:00:00</span>
         </div>
-        <div class="logs-container" id="logs-container"></div>
+        <div class="header-stat">
+          <span class="stat-label">Sessions</span>
+          <span class="stat-value mono" id="session-count">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Agent Cards -->
+      <section id="agents-section">
+        <h2 class="section-title">Active Agents</h2>
+        <div id="agents-grid" class="agents-grid"></div>
       </section>
 
-      <!-- Stats Sidebar -->
-      <aside id="stats-section">
-        <h2 class="section-title">Stats</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number" id="stat-total">0</div>
-            <div class="stat-desc">Total Tasks</div>
+      <!-- Task Board -->
+      <section id="tasks-section">
+        <h2 class="section-title">Task Board</h2>
+        <div class="kanban-board">
+          <div class="kanban-column" data-status="todo">
+            <div class="kanban-header">
+              <span class="kanban-title">To Do</span>
+              <span class="kanban-count" id="count-todo">0</span>
+            </div>
+            <div class="kanban-cards" id="col-todo"></div>
           </div>
-          <div class="stat-card stat-success">
-            <div class="stat-number" id="stat-completed">0</div>
-            <div class="stat-desc">Completed</div>
+          <div class="kanban-column" data-status="in-progress">
+            <div class="kanban-header">
+              <span class="kanban-title">In Progress</span>
+              <span class="kanban-count" id="count-in-progress">0</span>
+            </div>
+            <div class="kanban-cards" id="col-in-progress"></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-number" id="stat-remaining">0</div>
-            <div class="stat-desc">Remaining</div>
+          <div class="kanban-column" data-status="done">
+            <div class="kanban-header">
+              <span class="kanban-title">Done</span>
+              <span class="kanban-count" id="count-done">0</span>
+            </div>
+            <div class="kanban-cards" id="col-done"></div>
           </div>
-          <div class="stat-card stat-active">
-            <div class="stat-number" id="stat-agents">0</div>
-            <div class="stat-desc">Active Agents</div>
-          </div>
-          <div class="stat-card stat-error" id="stat-error-card">
-            <div class="stat-number" id="stat-errors">0</div>
-            <div class="stat-desc">Errors</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number" id="stat-eta">--</div>
-            <div class="stat-desc">Est. Remaining</div>
+          <div class="kanban-column" data-status="blocked">
+            <div class="kanban-header">
+              <span class="kanban-title">Blocked</span>
+              <span class="kanban-count" id="count-blocked">0</span>
+            </div>
+            <div class="kanban-cards" id="col-blocked"></div>
           </div>
         </div>
-      </aside>
+      </section>
+
+      <!-- Bottom row: Logs + Stats -->
+      <div class="bottom-row">
+        <section id="logs-section">
+          <div class="logs-header">
+            <h2 class="section-title">Live Activity Feed</h2>
+            <span class="log-badge" id="log-pause-badge" style="display:none">PAUSED</span>
+          </div>
+          <div class="logs-container" id="logs-container"></div>
+        </section>
+
+        <aside id="stats-section">
+          <h2 class="section-title">Stats</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-number" id="stat-total">0</div>
+              <div class="stat-desc">Total Tasks</div>
+            </div>
+            <div class="stat-card stat-success">
+              <div class="stat-number" id="stat-completed">0</div>
+              <div class="stat-desc">Completed</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="stat-remaining">0</div>
+              <div class="stat-desc">Remaining</div>
+            </div>
+            <div class="stat-card stat-active">
+              <div class="stat-number" id="stat-agents">0</div>
+              <div class="stat-desc">Active Agents</div>
+            </div>
+            <div class="stat-card stat-error" id="stat-error-card">
+              <div class="stat-number" id="stat-errors">0</div>
+              <div class="stat-desc">Errors</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="stat-eta">--</div>
+              <div class="stat-desc">Est. Remaining</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- VIEW: History -->
+  <div id="view-history" class="view">
+    <div class="history-page">
+      <div class="history-header">
+        <h2>Session History</h2>
+        <p class="history-subtitle">Completed sprints and task sessions — retained for progress tracking</p>
+      </div>
+      <div class="history-controls">
+        <input type="text" id="history-search" placeholder="Search summaries..." class="history-input" oninput="renderSummaries()">
+        <select id="history-filter" class="history-select" onchange="renderSummaries()">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <span class="history-count" id="history-count">0 sessions</span>
+      </div>
+      <div id="summaries-list" class="summaries-list"></div>
     </div>
-  </main>
+  </div>
 
   <script src="app.js"></script>
 </body>

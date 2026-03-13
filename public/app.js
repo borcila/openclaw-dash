@@ -1,12 +1,11 @@
 // ===== Claw Monitor — Frontend =====
 
-// API base URL — tunnel to local server via Cloudflare
-// Empty string = same-origin (local dev), otherwise use the tunnel domain
-const API = window.location.hostname === 'localhost' ? '' : 'https://api.alenxcloud.org';
+const API = window.location.hostname === 'localhost' ? '' : '';
 let projectData = {};
 let agentsData = [];
 let tasksData = [];
 let logsData = [];
+let summariesData = [];
 let agentMap = {};
 let logsPaused = false;
 let sseConnected = false;
@@ -14,14 +13,29 @@ let sseConnected = false;
 // ===== INIT =====
 
 async function init() {
+  setupNav();
   await Promise.all([
     fetchStatus(),
     fetchAgents(),
     fetchTasks(),
     fetchLogs(),
+    fetchSummaries(),
   ]);
   connectSSE();
   startUptimeTimer();
+}
+
+// ===== NAV =====
+
+function setupNav() {
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    });
+  });
 }
 
 // ===== FETCH =====
@@ -71,6 +85,14 @@ async function fetchLogs() {
   }
 }
 
+async function fetchSummaries() {
+  const data = await fetchJSON('/api/summaries');
+  if (data) {
+    summariesData = data;
+    renderSummaries();
+  }
+}
+
 // ===== SSE =====
 
 function connectSSE() {
@@ -109,6 +131,11 @@ function connectSSE() {
     projectData = { ...projectData, ...JSON.parse(e.data) };
     renderHeader();
   });
+
+  es.addEventListener('summaries', (e) => {
+    summariesData = JSON.parse(e.data);
+    renderSummaries();
+  });
 }
 
 function updateConnectionStatus(state) {
@@ -130,12 +157,17 @@ function renderHeader() {
 
   document.getElementById('progress-text').textContent = `${completed} / ${total} tasks`;
   document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('session-count').textContent = projectData.totalSessions || summariesData.length || 0;
 }
 
 // ===== RENDER: AGENTS =====
 
 function renderAgents() {
   const grid = document.getElementById('agents-grid');
+  if (!agentsData.length) {
+    grid.innerHTML = '<div class="empty-state">No agents active</div>';
+    return;
+  }
   grid.innerHTML = agentsData.map(agent => {
     const statusClass = agent.status;
     return `
@@ -145,14 +177,15 @@ function renderAgents() {
           <span class="agent-status ${statusClass}">${agent.status}</span>
         </div>
         <div class="agent-task">${esc(agent.task)}</div>
+        ${agent.model ? '<div class="agent-model">' + esc(agent.model) + '</div>' : ''}
         <div class="agent-progress-label">
           <span>Progress</span>
-          <span>${agent.progress}%</span>
+          <span>${agent.progress || 0}%</span>
         </div>
         <div class="agent-progress-track">
-          <div class="agent-progress-fill" style="width:${agent.progress}%"></div>
+          <div class="agent-progress-fill" style="width:${agent.progress || 0}%"></div>
         </div>
-        <div class="agent-activity">${esc(agent.lastActivity)}</div>
+        <div class="agent-activity">${esc(agent.lastActivity || '')}</div>
       </div>
     `;
   }).join('');
@@ -215,20 +248,10 @@ function renderLogs() {
   }
 }
 
-// Pause auto-scroll on hover
 const logsContainer = document.getElementById('logs-container');
 const pauseBadge = document.getElementById('log-pause-badge');
-
-logsContainer.addEventListener('mouseenter', () => {
-  logsPaused = true;
-  pauseBadge.style.display = 'inline-block';
-});
-
-logsContainer.addEventListener('mouseleave', () => {
-  logsPaused = false;
-  pauseBadge.style.display = 'none';
-  renderLogs();
-});
+logsContainer.addEventListener('mouseenter', () => { logsPaused = true; pauseBadge.style.display = 'inline-block'; });
+logsContainer.addEventListener('mouseleave', () => { logsPaused = false; pauseBadge.style.display = 'none'; renderLogs(); });
 
 // ===== RENDER: STATS =====
 
@@ -246,13 +269,8 @@ function renderStats() {
   document.getElementById('stat-errors').textContent = errorCount;
 
   const errorCard = document.getElementById('stat-error-card');
-  if (errorCount > 0) {
-    errorCard.classList.add('has-errors');
-  } else {
-    errorCard.classList.remove('has-errors');
-  }
+  errorCard.classList.toggle('has-errors', errorCount > 0);
 
-  // ETA estimate
   const etaEl = document.getElementById('stat-eta');
   if (completed > 0 && remaining > 0 && projectData.startedAt) {
     const elapsed = Date.now() - new Date(projectData.startedAt).getTime();
@@ -264,6 +282,125 @@ function renderStats() {
   } else {
     etaEl.textContent = '--';
   }
+}
+
+// ===== RENDER: SUMMARIES (History Page) =====
+
+function renderSummaries() {
+  const search = (document.getElementById('history-search')?.value || '').toLowerCase();
+  const filter = document.getElementById('history-filter')?.value || 'all';
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  let filtered = summariesData.filter(s => {
+    if (search) {
+      const haystack = (s.title + ' ' + (s.notes || '') + ' ' + (s.tags || []).join(' ')).toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    if (filter === 'today' && s.date !== todayStr) return false;
+    if (filter === 'week') {
+      const diff = (now - new Date(s.date)) / 86400000;
+      if (diff > 7) return false;
+    }
+    if (filter === 'month') {
+      const d = new Date(s.date);
+      if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false;
+    }
+    return true;
+  });
+
+  // Sort newest first
+  filtered.sort((a, b) => new Date(b.completedAt || b.date) - new Date(a.completedAt || a.date));
+
+  const countEl = document.getElementById('history-count');
+  if (countEl) countEl.textContent = filtered.length + ' session' + (filtered.length !== 1 ? 's' : '');
+
+  const list = document.getElementById('summaries-list');
+  if (!list) return;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">No session summaries yet. Complete sprints to see history here.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="summary-card" id="sc-${s.id}">
+      <div class="summary-header" onclick="toggleSummary('${s.id}')">
+        <div class="summary-header-left">
+          <div class="summary-title">${esc(s.title)}</div>
+          <div class="summary-meta">
+            <span class="summary-meta-item">📅 ${formatDate(s.completedAt || s.date)}</span>
+            <span class="summary-meta-item">⏱ ${esc(s.duration || 'N/A')}</span>
+            <span class="summary-meta-item">✅ ${(s.tasksCompleted || []).length} tasks</span>
+            <span class="summary-meta-item">🤖 ${(s.agentsUsed || []).length} agents</span>
+          </div>
+        </div>
+        <div class="summary-header-right">
+          ${(s.tags || []).map(t => '<span class="summary-tag">' + esc(t) + '</span>').join('')}
+          <span class="summary-chevron" id="chevron-${s.id}">▸</span>
+        </div>
+      </div>
+      <div class="summary-body" id="body-${s.id}">
+        ${renderSummaryTasks(s.tasksCompleted)}
+        ${renderSummaryAgents(s.agentsUsed)}
+        ${s.notes ? `
+          <div class="summary-section">
+            <h4 class="summary-section-title">📝 Notes</h4>
+            <div class="summary-notes">${esc(s.notes)}</div>
+          </div>
+        ` : ''}
+        ${s.filesChanged && s.filesChanged.length ? `
+          <div class="summary-section">
+            <h4 class="summary-section-title">📁 Files Changed</h4>
+            <div class="summary-files">${s.filesChanged.map(f => '<code>' + esc(f) + '</code>').join(' ')}</div>
+          </div>
+        ` : ''}
+        <div class="summary-timestamps">
+          Started: ${formatDate(s.startedAt)} ${formatTime(s.startedAt)} · Completed: ${formatDate(s.completedAt)} ${formatTime(s.completedAt)}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSummaryTasks(tasks) {
+  if (!tasks || !tasks.length) return '';
+  return `
+    <div class="summary-section">
+      <h4 class="summary-section-title">✅ Tasks Completed</h4>
+      ${tasks.map(t => `
+        <div class="summary-task-row">
+          <span class="summary-check">✓</span>
+          <span class="summary-task-name">${esc(t.title)}</span>
+          <span class="task-priority ${t.priority}">${t.priority}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderSummaryAgents(agents) {
+  if (!agents || !agents.length) return '';
+  return `
+    <div class="summary-section">
+      <h4 class="summary-section-title">🤖 Agents Used</h4>
+      ${agents.map(a => `
+        <div class="summary-agent-row">
+          <span class="summary-agent-dot">◆</span>
+          <strong>${esc(a.name)}</strong>
+          <span class="summary-agent-role">— ${esc(a.role)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function toggleSummary(id) {
+  const body = document.getElementById('body-' + id);
+  const chevron = document.getElementById('chevron-' + id);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
 // ===== UPTIME TIMER =====
@@ -288,8 +425,14 @@ function esc(str) {
 }
 
 function formatTime(iso) {
+  if (!iso) return '';
   const d = new Date(iso);
   return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatDuration(ms) {
@@ -301,5 +444,4 @@ function formatDuration(ms) {
 }
 
 // ===== START =====
-
 init();

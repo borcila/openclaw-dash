@@ -1,1 +1,15 @@
-[]
+[
+  {"timestamp": "2026-03-12T23:38:00Z", "agent": "claw-main", "type": "success", "message": "🦞 ClawOS initialized — first boot"},
+  {"timestamp": "2026-03-12T23:40:00Z", "agent": "claw-main", "type": "warning", "message": "Diagnosed Telegram bot token issue (401 Unauthorized)"},
+  {"timestamp": "2026-03-12T23:56:00Z", "agent": "claw-main", "type": "info", "message": "Created project: ClawOS Dashboard"},
+  {"timestamp": "2026-03-12T23:57:00Z", "agent": "claw-main", "type": "success", "message": "Completed: Set up memory system (daily notes + long-term + heartbeat)"},
+  {"timestamp": "2026-03-12T23:58:00Z", "agent": "claw-main", "type": "success", "message": "Created skill: project-manager"},
+  {"timestamp": "2026-03-12T23:58:30Z", "agent": "claw-main", "type": "success", "message": "Created skill: wellness-tracker"},
+  {"timestamp": "2026-03-12T23:59:00Z", "agent": "claw-main", "type": "info", "message": "Dashboard UI build started (sub-agent deployed)"},
+  {"timestamp": "2026-03-13T00:15:00Z", "agent": "claw-main", "type": "success", "message": "Dashboard v1 built and deployed — 43KB single-page app"},
+  {"timestamp": "2026-03-13T10:12:00Z", "agent": "claw-main", "type": "info", "message": "Cloning VoltAgent/awesome-claude-code-subagents repository"},
+  {"timestamp": "2026-03-13T10:15:00Z", "agent": "claw-main", "type": "success", "message": "Agent system built: 131 agents across 10 categories"},
+  {"timestamp": "2026-03-13T10:16:00Z", "agent": "claw-main", "type": "info", "message": "Created AGENTS-INDEX.md routing table + DISPATCH.md workflow"},
+  {"timestamp": "2026-03-13T10:22:00Z", "agent": "claw-main", "type": "info", "message": "Starting Dashboard v2 rewrite — agent tracking + history page"},
+  {"timestamp": "2026-03-13T10:30:00Z", "agent": "claw-main", "type": "success", "message": "Dashboard v2 deployed — 69KB with cross-session sync + history"}
+]

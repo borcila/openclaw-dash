@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "claw-main",
+    "name": "Claw 🦞",
+    "task": "Personal OS — orchestrating tasks, projects, agents",
+    "status": "running",
+    "startedAt": "2026-03-12T23:38:00Z",
+    "progress": 100,
+    "lastActivity": "Dashboard v2 deployed — agent tracking + history page",
+    "model": "claude-opus-4-6",
+    "errors": []
+  }
+]

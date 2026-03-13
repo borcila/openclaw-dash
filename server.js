@@ -115,6 +115,7 @@ watcher.on('change', (filepath) => {
     'tasks.json': 'tasks',
     'logs.json': 'logs',
     'project.json': 'project',
+    'summaries.json': 'summaries',
   };
   const event = eventMap[basename];
   if (event) {
@@ -130,6 +131,7 @@ app.get('/api/status', (req, res) => {
   const agents = readJSON('agents.json');
   const tasks = readJSON('tasks.json');
   const logs = readJSON('logs.json');
+  const summaries = readJSON('summaries.json');
 
   const completedTasks = tasks.filter((t) => t.status === 'done').length;
   const errorCount = logs.filter((l) => l.type === 'error').length;
@@ -140,6 +142,7 @@ app.get('/api/status', (req, res) => {
     completedTasks,
     activeAgents: agents.filter((a) => a.status === 'running').length,
     errorCount,
+    totalSessions: summaries.length,
   });
 });
 
@@ -193,6 +196,27 @@ app.post('/api/tasks', (req, res) => {
   }
   writeJSON('tasks.json', tasks);
   broadcast('tasks', tasks);
+  res.json({ ok: true });
+});
+
+// --- Summaries ---
+
+app.get('/api/summaries', (req, res) => {
+  const summaries = readJSON('summaries.json');
+  res.json(summaries);
+});
+
+app.post('/api/summaries', (req, res) => {
+  const summaries = readJSON('summaries.json');
+  const { id, ...updates } = req.body;
+  const idx = summaries.findIndex((s) => s.id === id);
+  if (idx !== -1) {
+    summaries[idx] = { ...summaries[idx], ...updates };
+  } else {
+    summaries.push(req.body);
+  }
+  writeJSON('summaries.json', summaries);
+  broadcast('summaries', summaries);
   res.json({ ok: true });
 });
 

@@ -1,9 +1,9 @@
 {
-  "name": "",
-  "description": "",
-  "startedAt": null,
-  "repository": "",
-  "totalTasks": 0,
-  "completedTasks": 0,
-  "activeAgents": 0
+  "name": "ClawOS",
+  "description": "Personal AI operating system — tasks, agents, projects, wellness, memory",
+  "startedAt": "2026-03-12T23:38:00Z",
+  "repository": "https://github.com/borcila/openclaw-dash",
+  "totalTasks": 7,
+  "completedTasks": 7,
+  "activeAgents": 1
 }
