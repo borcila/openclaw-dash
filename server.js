@@ -1,16 +1,60 @@
 const express = require('express');
+const crypto = require('crypto');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const chokidar = require('chokidar');
 
 const app = express();
-const PORT = 3777;
+const PORT = process.env.CLAW_PORT || 3777;
 const DATA_DIR = path.join(__dirname, 'data');
 
-app.use(cors());
-app.use(express.json());
+// --- Security ---
+
+// Auth token: set via env var or auto-generated on first run
+const TOKEN_FILE = path.join(__dirname, '.claw-token');
+let AUTH_TOKEN = process.env.CLAW_AUTH_TOKEN;
+if (!AUTH_TOKEN) {
+  try {
+    AUTH_TOKEN = fs.readFileSync(TOKEN_FILE, 'utf-8').trim();
+  } catch {
+    AUTH_TOKEN = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(TOKEN_FILE, AUTH_TOKEN, 'utf-8');
+    console.log(`\n  🔑 Generated auth token (saved to .claw-token):\n  ${AUTH_TOKEN}\n`);
+  }
+}
+
+// Allowed origins for CORS (your Vercel domain + localhost)
+const ALLOWED_ORIGINS = (process.env.CLAW_ALLOWED_ORIGINS || 'http://localhost:3777').split(',');
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (same-origin, curl, server-to-server)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked'));
+    }
+  },
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10kb' })); // Limit body size
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Auth middleware for API routes
+function requireAuth(req, res, next) {
+  // GET requests from same-origin (browser) don't need token — SSE and reads are public to the frontend
+  // POST/PUT/DELETE require Bearer token
+  if (req.method === 'GET') return next();
+
+  const auth = req.headers.authorization;
+  if (!auth || auth !== `Bearer ${AUTH_TOKEN}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.use('/api', requireAuth);
 
 // --- Helpers ---
 
@@ -154,6 +198,11 @@ app.post('/api/tasks', (req, res) => {
 
 // --- Start ---
 
-app.listen(PORT, () => {
-  console.log(`\n  🐾 Claw Monitor running at http://localhost:${PORT}\n`);
+// Bind to localhost only — not exposed on network directly
+// Access remotely via Cloudflare tunnel only
+const HOST = process.env.CLAW_HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  console.log(`\n  🐾 Claw Monitor running at http://${HOST}:${PORT}`);
+  console.log(`  🔒 Auth token required for write operations`);
+  console.log(`  📁 Token file: ${TOKEN_FILE}\n`);
 });

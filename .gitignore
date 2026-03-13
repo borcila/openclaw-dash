@@ -1,1 +1,6 @@
 node_modules/
+.claw-token
+.vercel/
+.env
+
+.vercel
