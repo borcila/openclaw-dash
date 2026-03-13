@@ -1,8 +1,8 @@
 // ===== Claw Monitor — Frontend =====
 
-// API base URL — set to your Cloudflare tunnel domain when deployed on Vercel
-// Leave empty for local development (same-origin)
-const API = window.CLAW_API_URL || localStorage.getItem('claw_api_url') || '';
+// API base URL — tunnel to local server via Cloudflare
+// Empty string = same-origin (local dev), otherwise use the tunnel domain
+const API = window.location.hostname === 'localhost' ? '' : 'https://api.alenxcloud.org';
 let projectData = {};
 let agentsData = [];
 let tasksData = [];
