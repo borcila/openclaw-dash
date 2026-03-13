@@ -1,6 +1,8 @@
 // ===== Claw Monitor — Frontend =====
 
-const API = '';
+// API base URL — set to your Cloudflare tunnel domain when deployed on Vercel
+// Leave empty for local development (same-origin)
+const API = window.CLAW_API_URL || localStorage.getItem('claw_api_url') || '';
 let projectData = {};
 let agentsData = [];
 let tasksData = [];
